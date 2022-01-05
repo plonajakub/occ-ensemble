@@ -1,30 +1,35 @@
 import numpy as np
-from sklearn.ensemble import BaseEnsemble
-from sklearn.base import ClassifierMixin, clone
-from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
-from sklearn.model_selection import train_test_split
 from sklearn import svm
+from sklearn.base import clone
+from sklearn.ensemble import BaseEnsemble
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 
 class OCCEnsemble(BaseEnsemble):
     def __init__(self, base_classifier=svm.OneClassSVM(nu=0.1, kernel='rbf', gamma=0.1), random_state=None,
-                 combination='max_distance', predict_n_pick=3, train_split_size=0.2):
+                 combination='max_distance', predict_n_pick=3, train_split_size=0.2,
+                 combination_classifier=KNeighborsClassifier(n_neighbors=4)):
         self.base_classifier = base_classifier
         self.classifiers = []
         self.train_split_size = train_split_size
-        self.combination = combination  # max_distance, weighted
+        if combination not in ['max_distance', 'weighted', 'classifier']:
+            raise ValueError('Invalid argument for \'combination\'')
+        self.combination = combination
         self.random_state = random_state
         self.classes = None
         self.n_features = None
         self.classifiers_effectiveness = None
         self.predict_n_pick = predict_n_pick
+        self.combination_classifier = combination_classifier
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
         self.classes = np.unique(y)
         self.n_features = X.shape[1]
 
-        if self.combination == 'weighted':
+        if self.combination == 'weighted' or self.combination == 'classifier':
             X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.train_split_size, stratify=y)
         else:
             X_train, X_val, y_train, y_val = X, None, y, None
@@ -45,6 +50,12 @@ class OCCEnsemble(BaseEnsemble):
                     if y_val_item == cls_idx + 1 and p == 1:
                         self.classifiers_effectiveness[cls_idx] += 1
 
+        if self.combination == 'classifier':
+            distances = []
+            for cls in self.classifiers:
+                distances.append(cls.decision_function(X_val))
+            distances = np.array(distances).T
+            self.combination_classifier.fit(distances, y_val)
         return self
 
     def predict(self, X):
@@ -57,7 +68,8 @@ class OCCEnsemble(BaseEnsemble):
         for cls in self.classifiers:
             signed_distances.append(cls.decision_function(X))
         signed_distances = np.array(signed_distances)
-        if self.classifiers_effectiveness is not None:
+
+        if self.combination == 'weighted':
             y_pred = []
             for x_idx in range(X.shape[0]):
                 cls_distances = [(i, dist) for i, dist in enumerate(signed_distances[:, x_idx])]
@@ -66,6 +78,12 @@ class OCCEnsemble(BaseEnsemble):
                 pred_cls = max(most_prob_classes, key=lambda t: self.classifiers_effectiveness[t[0]])
                 y_pred.append(self.classes[pred_cls[0]])
             return np.array(y_pred)
-        else:
+
+        if self.combination == 'classifier':
+            signed_distances_t = signed_distances.T
+            y_pred = self.combination_classifier.predict(signed_distances_t)
+            return y_pred
+
+        if self.combination == 'max_distance':
             predictions = np.argmax(signed_distances, axis=0)
             return self.classes[predictions]

@@ -1,12 +1,13 @@
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from sklearn import clone
+from sklearn.metrics import balanced_accuracy_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 
 from occ_ensemble import OCCEnsemble
-import pandas as pd
-from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold
-from sklearn.metrics import balanced_accuracy_score, accuracy_score
-import matplotlib.pyplot as plt
 
 
 def numpy_ds_bar_plot(x, title, x_label, y_label):
@@ -22,19 +23,22 @@ def numpy_ds_bar_plot(x, title, x_label, y_label):
 
 def main():
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
+    # X = data.iloc[:, :-5].to_numpy()
     # X = data[['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'MSTV', 'ASTV']].to_numpy()
     X = data[['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB']].to_numpy()
     y = data['CLASS'].to_numpy()
 
-    numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
+    # numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
 
     clfs = {
-        'occ_max_dist': OCCEnsemble(combination='max_dist'),
+        'occ_max_dist': OCCEnsemble(combination='max_distance'),
         'occ_weighted': OCCEnsemble(combination='weighted', predict_n_pick=2, train_split_size=0.2),
-        'mlp': MLPClassifier(hidden_layer_sizes=(100), max_iter=2000, activation='logistic')
+        'occ_classifier': OCCEnsemble(combination='classifier', train_split_size=0.4,
+                                      combination_classifier=KNeighborsClassifier(n_neighbors=4)),
+        'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000,  learning_rate='adaptive')
     }
 
-    rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=1234)
+    rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=1, random_state=1234)
     scores = {k: [] for k in clfs.keys()}
 
     for train_index, test_index in rskf.split(X, y):
