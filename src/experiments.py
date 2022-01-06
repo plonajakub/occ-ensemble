@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from sklearn import clone
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, confusion_matrix
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
@@ -28,7 +28,7 @@ def main():
     X = data[['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB']].to_numpy()
     y = data['CLASS'].to_numpy()
 
-    # numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
+    numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
 
     clfs = {
         'occ_max_dist': OCCEnsemble(combination='max_distance'),
@@ -40,6 +40,7 @@ def main():
 
     rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=1, random_state=1234)
     scores = {k: [] for k in clfs.keys()}
+    confusion_matrices = {k: [] for k in clfs.keys()}
 
     for train_index, test_index in rskf.split(X, y):
         for clf_name, clf in clfs.items():
@@ -49,12 +50,15 @@ def main():
             clf.fit(X_train, y_train)
             predict = clf.predict(X_test)
             scores[clf_name].append(balanced_accuracy_score(y_test, predict))
+            confusion_matrices[clf_name].append(confusion_matrix(y_test, predict))
 
-    for clf_name, clf_score in scores.items():
-        mean_score = np.mean(clf_score)
-        std_score = np.std(clf_score)
+    for clf_name in clfs.keys():
+        mean_score = np.mean(scores[clf_name])
+        std_score = np.std(scores[clf_name])
+        cm = confusion_matrices[clf_name][0]
         print(f'{clf_name} - balanced accuracy: %.3f +- %.3f' % (mean_score, std_score))
-    pass
+        print(f'{clf_name} - confusion matrix (first split): \n{cm}')
+        print()
 
 
 if __name__ == '__main__':
