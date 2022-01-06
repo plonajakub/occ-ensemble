@@ -33,9 +33,12 @@ def main():
     clfs = {
         'occ_max_dist': OCCEnsemble(combination='max_distance'),
         'occ_weighted': OCCEnsemble(combination='weighted', predict_n_pick=2, train_split_size=0.2),
-        'occ_classifier': OCCEnsemble(combination='classifier', train_split_size=0.4,
-                                      combination_classifier=KNeighborsClassifier(n_neighbors=4)),
-        'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000,  learning_rate='adaptive')
+        'occ_classifier_knn': OCCEnsemble(combination='classifier', train_split_size=0.4,
+                                          combination_classifier=KNeighborsClassifier(n_neighbors=4)),
+        'occ_classifier_mlp': OCCEnsemble(combination='classifier', train_split_size=0.5,
+                                          combination_classifier=MLPClassifier(hidden_layer_sizes=(100),
+                                                                               activation='relu', max_iter=10000)),
+        'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000, learning_rate='adaptive')
     }
 
     rskf = RepeatedStratifiedKFold(n_splits=2, n_repeats=1, random_state=1234)
