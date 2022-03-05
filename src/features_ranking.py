@@ -57,6 +57,6 @@ if __name__ == '__main__':
                          title="ANOVA", xlabel='F')
 
     scores_mi_all = rate_features_mutual_info(
-        all_df, discrete_features_indexes=[20])
+        all_df, discrete_features_indexes=[20])  # also discrete features should be added here (not only categorical)
     print_feature_scores(list(all_df.columns.values[:-1]), scores_mi_all,
                          title="Mutual information", xlabel='mi')
