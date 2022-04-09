@@ -8,7 +8,7 @@ from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
 
 
 class OCCEnsemble(BaseEnsemble):
-    def __init__(self, base_classifier=svm.OneClassSVM(nu=0.01, kernel='rbf', gamma=0.01), random_state=None,
+    def __init__(self, base_classifier=svm.OneClassSVM(), random_state=None,
                  combination='max_distance', predict_n_pick=3, train_split_size=0.2,
                  combination_classifier=KNeighborsClassifier(n_neighbors=4)):
         self.base_classifier = base_classifier

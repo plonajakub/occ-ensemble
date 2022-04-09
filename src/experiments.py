@@ -1,12 +1,15 @@
 import numpy as np
 import pandas as pd
+
 from sklearn import clone
 from sklearn.metrics import balanced_accuracy_score, confusion_matrix, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler, MaxAbsScaler
+from sklearn import svm
 from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
 
 from imblearn.pipeline import Pipeline
 from imblearn.combine import SMOTETomek
@@ -31,7 +34,7 @@ def main():
     X = data.iloc[:, :-1].to_numpy()
     y = data.iloc[:, -1].to_numpy()
 
-    numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
+    # numpy_ds_bar_plot(y, 'Distribution of classes', 'Class', 'Occurrences')
 
     features_divisions = [
         # list(map(lambda f: sf_f2int[f],
@@ -45,7 +48,7 @@ def main():
                  ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
     ]
     clfs = {
-        'occ_max_dist': OCCEnsemble(combination='max_distance'),
+        'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
         # 'binary_decomposition': BinaryDecompositionEnsemble(),
         # 'occ_ensamble_2': OCCEnsemble2(ensemble_size=5, features_divisions=features_divisions, combination_type='max'),
         # 'occ_dynamic_selection': OCCEnsembleDynamicSelection(),
@@ -55,17 +58,19 @@ def main():
         # 'occ_classifier_mlp': OCCEnsemble(combination='classifier', train_split_size=0.5,
         #                                   combination_classifier=MLPClassifier(hidden_layer_sizes=(100),
         #                                                                        activation='relu', max_iter=10000)),
-        'svc': SVC(C=2, gamma=0.01, class_weight='balanced', break_ties=True),
-        'occ_nearest_mean': OCCNearestMean(),
-        'knn': KNeighborsClassifier(n_neighbors=1),
+        'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
+        'occ_nearest_mean': OCCNearestMean(resolve_classifier=KNeighborsClassifier(n_neighbors=5), outlier_ratio=0.5),
+        'knn': KNeighborsClassifier(n_neighbors=5),
+        'gnb': GaussianNB(),
         # 'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000, learning_rate='adaptive')
     }
 
     transformers = [
         ('scaler', StandardScaler()),
-        ('resampler', SMOTETomek(n_jobs=-1,
-                                 sampling_strategy={1: 350, 2: 400, 3: 200, 4: 200, 5: 200,
-                                                    6: 350, 7: 350, 8: 200, 9: 200, 10: 350})),
+        ('resampler', SMOTETomek(n_jobs=-1)),
+        # ('resampler', SMOTETomek(n_jobs=-1,
+        #                          sampling_strategy={1: 350, 2: 400, 3: 200, 4: 200, 5: 200,
+        #                                             6: 350, 7: 350, 8: 200, 9: 200, 10: 350})),
     ]
 
     rskf = RepeatedStratifiedKFold(n_splits=3, n_repeats=1, random_state=1234)

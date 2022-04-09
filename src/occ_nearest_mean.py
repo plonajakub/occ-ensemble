@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.base import clone
 from sklearn.ensemble import BaseEnsemble
 from sklearn.model_selection import train_test_split
@@ -9,7 +10,7 @@ from sklearn.metrics.pairwise import euclidean_distances
 
 class OCCNearestMean(BaseEnsemble):
     def __init__(self,
-                 resolve_classifier=KNeighborsClassifier(n_neighbors=5),
+                 resolve_classifier=KNeighborsClassifier(),
                  # decision_boundary_coef=3,
                  outlier_ratio=0.00,
                  random_state=None, ):
@@ -22,8 +23,7 @@ class OCCNearestMean(BaseEnsemble):
         self.max_distances = []  # max distances from means
         self.classes = None
         self.n_features = None
-        self.X_train = None
-        self.y_train = None
+        self.train_df = None
 
     def fit(self, X, y):
         X, y = check_X_y(X, y)
@@ -32,8 +32,8 @@ class OCCNearestMean(BaseEnsemble):
 
         # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.train_split_size, stratify=y)
         X_train, X_val, y_train, y_val = X, None, y, None
-        self.X_train = X_train
-        self.y_train = y_train
+        self.train_df = pd.DataFrame(data=X_train, copy=True)
+        self.train_df['y'] = y_train
 
         for c in self.classes:
             class_objects = X[y == c]
@@ -42,7 +42,7 @@ class OCCNearestMean(BaseEnsemble):
             # class_std = np.std(class_objects, axis=0)
             # max_distance_from_mean = self.decision_boundary_coef * class_std
             # self.max_distances.append(max_distance_from_mean)
-            distances = euclidean_distances(self.X_train, class_mean[np.newaxis, :])
+            distances = euclidean_distances(X_train, class_mean[np.newaxis, :])
             distances = np.squeeze(distances)
             sorted_distances = np.sort(distances)[::-1]
             skip_idx = np.clip(np.rint(self.outlier_ratio * X_train.shape[0]), a_min=0,
@@ -59,5 +59,26 @@ class OCCNearestMean(BaseEnsemble):
 
         distances = euclidean_distances(X, self.means)
         boundary_offset = np.array(self.max_distances)[np.newaxis, :] - distances
-        predictions = np.argmax(boundary_offset, axis=1)
-        return self.classes[predictions]
+        predictions = []
+        for dfv, prd_obj in zip(boundary_offset, X):  # dfv - decision function vector
+            pred = np.argmax(dfv)
+
+            if dfv[pred] < 0:
+                predictions.append(self.classes[pred])
+                continue
+
+            inliers = []
+            for idx, df in enumerate(dfv):
+                if df >= 0:
+                    inliers.append(self.classes[idx])
+            if len(inliers) == 1:
+                predictions.append(self.classes[pred])
+                continue
+
+            tmp_resolve_cls = clone(self.resolve_classifier)
+            selected_train_data = self.train_df.loc[self.train_df['y'].isin(inliers)]
+            tmp_resolve_cls.fit(selected_train_data.iloc[:, :-1], selected_train_data['y'])
+            resolved_pred = tmp_resolve_cls.predict(prd_obj[np.newaxis, :])
+            predictions.append(resolved_pred[0])
+
+        return predictions
