@@ -1,3 +1,4 @@
+import pandas as pd
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,3 +20,22 @@ def numpy_ds_bar_plot(x, title, x_label, y_label):
     plt.title(title)
     plt.show()
     plt.close()
+
+
+def plot_feature_selection_results(path):
+    df = pd.read_csv(path)
+    for clf in df['clf'].unique():
+        clf_df = df[df['clf'] == clf]
+        clf_df_sorted = clf_df.sort_values(by='n_features')
+        x = clf_df_sorted['n_features']
+        y = clf_df_sorted['ba_mean']
+        plt.xticks(np.arange(df['n_features'].min(), df['n_features'].max() + 1, 1))
+        plt.plot(x, y, label=f'{clf}')
+        plt.scatter(x, y)
+    plt.legend()
+    plt.grid()
+    plt.xlabel('Liczba cech')
+    plt.ylabel('Zbalansowana dokładność')
+    # plt.title('Selekcja cech')
+    plt.tight_layout()
+    plt.show()
