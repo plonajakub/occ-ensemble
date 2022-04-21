@@ -19,6 +19,7 @@ from occ_ensamble2 import OCCEnsemble2
 from occ_ensamble_dynamic_cls_selection import OCCEnsembleDynamicSelection
 from binary_decomposition import BinaryDecompositionEnsemble
 from occ_nearest_mean import OCCNearestMean
+from occ_naive_bayes import OCCNaiveBayes
 from misc import *
 
 
@@ -61,6 +62,7 @@ def main():
         'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
         'occ_nearest_mean': OCCNearestMean(resolve_classifier=KNeighborsClassifier(n_neighbors=5), outlier_ratio=0.5),
         'knn': KNeighborsClassifier(n_neighbors=5),
+        'occ_nb': OCCNaiveBayes(data_contamination=0),
         'gnb': GaussianNB(),
         # 'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000, learning_rate='adaptive')
     }
