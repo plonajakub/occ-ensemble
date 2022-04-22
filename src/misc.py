@@ -14,7 +14,11 @@ def preprocess_data(df: DataFrame):
 
 def numpy_ds_bar_plot(x, title, x_label, y_label):
     x_unique, x_count = np.unique(x, return_counts=True)
-    plt.bar(x_unique, height=x_count)
+    bars = plt.bar(x_unique, height=x_count)
+    counts = np.bincount(x)[1:]
+    for c, rect in zip(counts, bars):
+        plt.text(rect.get_x() + rect.get_width() / 2.0, rect.get_height(), f'{rect.get_height():.0f}',
+                 ha='center', va='bottom')
     plt.xticks(x_unique)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
@@ -73,12 +77,14 @@ def plot_parameter_search_heatmap(scores_df, p1_name, p1_range, p2_name, p2_rang
 
 
 def main():
-    svc_gs_results_df = pd.read_csv('../results/parameter_search/svc__grid_search__ba_score.csv')
-    C_range = svc_gs_results_df['param_clf__C'].unique()
-    C_range.sort()
-    gamma_range = svc_gs_results_df['param_clf__gamma'].unique()
-    gamma_range.sort()
-    plot_parameter_search_heatmap(svc_gs_results_df, 'C', C_range, 'gamma', gamma_range)
+    plot_feature_selection_results('../results/feature_selection/feature_selection_results.csv')
+
+    # svc_gs_results_df = pd.read_csv('../results/parameter_search/svc__grid_search__ba_score.csv')
+    # C_range = svc_gs_results_df['param_clf__C'].unique()
+    # C_range.sort()
+    # gamma_range = svc_gs_results_df['param_clf__gamma'].unique()
+    # gamma_range.sort()
+    # plot_parameter_search_heatmap(svc_gs_results_df, 'C', C_range, 'gamma', gamma_range)
 
 
 if __name__ == '__main__':

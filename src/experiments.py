@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn import clone
 from sklearn.metrics import balanced_accuracy_score, confusion_matrix, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler, MaxAbsScaler
 from sklearn import svm
@@ -12,7 +12,8 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 
 from imblearn.pipeline import Pipeline
-from imblearn.combine import SMOTETomek
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
 
 from occ_ensemble import OCCEnsemble
 from occ_ensamble2 import OCCEnsemble2
@@ -24,10 +25,11 @@ from misc import *
 
 
 def main():
+    results_save_path = '../results/experiments/test_results.csv'
+
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
-    # selected_features = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB', 'Variance',
-    #                      'Mode', 'Width', 'Min', 'Max', 'Median', 'DS.1', 'FM.1']
-    selected_features = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB', 'DS.1', 'FM.1']
+    selected_features = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'Variance', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
+                         'ASTV', 'Max', 'Nmax', 'UC.1', 'MLTV', 'LB']
     sf_f2int = {f: i for i, f in enumerate(selected_features)}
     class_feature = ['CLASS']
     data = data[selected_features + class_feature]
@@ -43,13 +45,18 @@ def main():
         # list(map(lambda f: sf_f2int[f],
         #          ['DL.1', 'AC.1', 'ALTV', 'Mean', 'Variance', 'Width', 'Min', 'MSTV', 'Median', 'Mode', 'ASTV'])),
 
-        list(map(lambda f: sf_f2int[f],
-                 ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'FM.1'])),
-        list(map(lambda f: sf_f2int[f],
-                 ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
+        # list(map(lambda f: sf_f2int[f],
+        #          ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'FM.1'])),
+        # list(map(lambda f: sf_f2int[f],
+        #          ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
     ]
     clfs = {
-        # 'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
+        'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
+        'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
+        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
+        'nc': NearestCentroid(),
+        'occ_nb': OCCNaiveBayes(data_contamination=0),
+        'gnb': GaussianNB(),
         # 'binary_decomposition': BinaryDecompositionEnsemble(),
         # 'occ_ensamble_2': OCCEnsemble2(ensemble_size=5, features_divisions=features_divisions, combination_type='max'),
         # 'occ_dynamic_selection': OCCEnsembleDynamicSelection(),
@@ -59,29 +66,40 @@ def main():
         # 'occ_classifier_mlp': OCCEnsemble(combination='classifier', train_split_size=0.5,
         #                                   combination_classifier=MLPClassifier(hidden_layer_sizes=(100),
         #                                                                        activation='relu', max_iter=10000)),
-        # 'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
-        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
-        # 'knn': KNeighborsClassifier(n_neighbors=5),
-        # 'occ_nb': OCCNaiveBayes(data_contamination=0),
-        # 'gnb': GaussianNB(),
         # 'mlp': MLPClassifier(hidden_layer_sizes=(40), activation='logistic', max_iter=2000, learning_rate='adaptive')
     }
 
-    transformers = [
-        ('scaler', StandardScaler()),
-        ('resampler', SMOTETomek(n_jobs=-1)),
-        # ('resampler', SMOTETomek(n_jobs=-1,
-        #                          sampling_strategy={1: 350, 2: 400, 3: 200, 4: 200, 5: 200,
-        #                                             6: 350, 7: 350, 8: 200, 9: 200, 10: 350})),
-    ]
+    n_splits = 5
+    n_repeats = 2
 
-    rskf = RepeatedStratifiedKFold(n_splits=3, n_repeats=1, random_state=1234)
+    rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
     ba_scores = {k: [] for k in clfs.keys()}
-    precision_scores = {k: [] for k in clfs.keys()}
-    recall_scores = {k: [] for k in clfs.keys()}
+    precision_scores_single = {k: [] for k in clfs.keys()}
+    precision_scores_multi = {k: [] for k in clfs.keys()}
+    recall_scores_single = {k: [] for k in clfs.keys()}
+    recall_scores_multi = {k: [] for k in clfs.keys()}
     confusion_matrices = {k: [] for k in clfs.keys()}
 
     for train_index, test_index in rskf.split(X, y):
+        y_counts = np.bincount(y[train_index])
+        transformers = [
+            ('scaler', StandardScaler()),
+            ('undersampler',
+             RandomUnderSampler(sampling_strategy={
+                 1: int(0.75 * y_counts[1]),
+                 2: int(0.5 * y_counts[2]),
+                 6: int(0.75 * y_counts[6]),
+             }, random_state=1234)),
+            ('oversampler',
+             SMOTE(sampling_strategy={
+                 3: int(5 * y_counts[3]),
+                 4: int(3 * y_counts[4]),
+                 5: int(4 * y_counts[5]),
+                 8: int(2.5 * y_counts[8]),
+                 9: int(4 * y_counts[9]),
+                 10: int(1.3 * y_counts[10]),
+             }, random_state=1234, n_jobs=-1))
+        ]
         for clf_name, clf in clfs.items():
             clf = clone(clf)
             pipeline = Pipeline([*transformers, ('clf', clf)])
@@ -90,35 +108,55 @@ def main():
             pipeline.fit(X_train, y_train)
             predict = pipeline.predict(X_test)
             ba_scores[clf_name].append(balanced_accuracy_score(y_test, predict))
-            precision_scores[clf_name].append(precision_score(y_test, predict, average=None))
-            recall_scores[clf_name].append(recall_score(y_test, predict, average=None))
+            precision_scores_single[clf_name].append(precision_score(y_test, predict, average='weighted'))
+            precision_scores_multi[clf_name].append(precision_score(y_test, predict, average=None))
+            recall_scores_single[clf_name].append(recall_score(y_test, predict, average='weighted'))
+            recall_scores_multi[clf_name].append(recall_score(y_test, predict, average=None))
             confusion_matrices[clf_name].append(confusion_matrix(y_test, predict))
+
+    total_folds = n_splits * n_repeats
+    assert total_folds == len(ba_scores[list(clfs.keys())[0]])
+    scores_to_save = {
+        'balanced_accuracy': ba_scores,
+        'precision': precision_scores_single,
+        'recall': recall_scores_single,
+    }
+
+    results_df = pd.DataFrame()
+    for fold_idx in range(total_folds):
+        for score_name in scores_to_save.keys():
+            df_item = {'score_name': [score_name], 'fold_idx': [fold_idx]}
+            for clf_name in clfs.keys():
+                df_item[clf_name] = [scores_to_save[score_name][clf_name][fold_idx]]
+            results_df = pd.concat((results_df, pd.DataFrame(df_item)), axis=0, ignore_index=True)
+    results_df.sort_values(by='score_name', inplace=True)
+    results_df.to_csv(path_or_buf=results_save_path, float_format='%.4f')
 
     for clf_name in clfs.keys():
         mean_ba_score = np.mean(ba_scores[clf_name])
         std_ba_score = np.std(ba_scores[clf_name])
         print(f'{clf_name} - balanced accuracy: %.3f +- %.3f' % (mean_ba_score, std_ba_score))
 
-        mean_precision_score = np.mean(precision_scores[clf_name], axis=0)
-        std_precision_score = np.std(precision_scores[clf_name], axis=0)
+        mean_precision_score = np.mean(precision_scores_multi[clf_name], axis=0)
+        std_precision_score = np.std(precision_scores_multi[clf_name], axis=0)
         print('Average precision: %.2f +- %.2f' % (
-            np.mean(precision_scores[clf_name]), np.std(precision_scores[clf_name])))
+            np.mean(precision_scores_multi[clf_name]), np.std(precision_scores_multi[clf_name])))
         print('Precision in classes: ')
         for c_idx, (m, s) in enumerate(zip(mean_precision_score, std_precision_score)):
             print(f'{c_idx + 1}: %.2f +- %.2f ' % (m, s), end='\n')
         print()
 
-        mean_recall_score = np.mean(recall_scores[clf_name], axis=0)
-        std_recall_score = np.std(recall_scores[clf_name], axis=0)
+        mean_recall_score = np.mean(recall_scores_multi[clf_name], axis=0)
+        std_recall_score = np.std(recall_scores_multi[clf_name], axis=0)
         print('Average recall: %.2f +- %.2f' % (
-            np.mean(recall_scores[clf_name]), np.std(recall_scores[clf_name])))
+            np.mean(recall_scores_multi[clf_name]), np.std(recall_scores_multi[clf_name])))
         print('Recall in classes: ')
         for c_idx, (m, s) in enumerate(zip(mean_recall_score, std_recall_score)):
             print(f'{c_idx + 1}: %.2f +- %.2f ' % (m, s), end='\n')
         print()
 
         cm = confusion_matrices[clf_name][0]
-        np.savetxt(f'../results/confussion_matrix__{clf_name}.csv', cm, delimiter=',', fmt='%d')
+        np.savetxt(f'../results/confusion_matrices/confussion_matrix__{clf_name}.csv', cm, delimiter=',', fmt='%d')
         print(f'{clf_name} - confusion matrix (first split): \n{cm}')
         print()
 
