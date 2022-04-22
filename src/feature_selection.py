@@ -32,7 +32,7 @@ def main():
     clfs = {
         'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
         'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
-        'occ_nearest_mean': OCCNearestMean(resolve_classifier=KNeighborsClassifier(n_neighbors=5), outlier_ratio=0.5),
+        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.5),
         'knn': KNeighborsClassifier(n_neighbors=5),
         'gnb': GaussianNB(),
     }

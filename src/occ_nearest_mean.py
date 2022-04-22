@@ -2,21 +2,20 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.ensemble import BaseEnsemble
+from sklearn.metrics.pairwise import euclidean_distances
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.utils.validation import check_array, check_is_fitted, check_X_y
-from sklearn.metrics.pairwise import euclidean_distances
 
 
 class OCCNearestMean(BaseEnsemble):
     def __init__(self,
-                 resolve_classifier=KNeighborsClassifier(),
-                 # decision_boundary_coef=3,
-                 outlier_ratio=0.00,
+                 knn_neighbors=5,
+                 data_contamination=0.00,
                  random_state=None, ):
-        self.resolve_classifier = resolve_classifier
-        # self.decision_boundary_coef = decision_boundary_coef
-        self.outlier_ratio = outlier_ratio
+        self.knn_neighbors = knn_neighbors
+        self.resolve_classifier = KNeighborsClassifier(n_neighbors=knn_neighbors, n_jobs=-1)
+        self.data_contamination = data_contamination
         self.random_state = random_state
 
         self.means = []
@@ -36,17 +35,14 @@ class OCCNearestMean(BaseEnsemble):
         self.train_df['y'] = y_train
 
         for c in self.classes:
-            class_objects = X[y == c]
+            class_objects = X_train[y_train == c]
             class_mean = np.mean(class_objects, axis=0)
             self.means.append(class_mean)
-            # class_std = np.std(class_objects, axis=0)
-            # max_distance_from_mean = self.decision_boundary_coef * class_std
-            # self.max_distances.append(max_distance_from_mean)
-            distances = euclidean_distances(X_train, class_mean[np.newaxis, :])
+            distances = euclidean_distances(class_objects, class_mean[np.newaxis, :])
             distances = np.squeeze(distances)
             sorted_distances = np.sort(distances)[::-1]
-            skip_idx = np.clip(np.rint(self.outlier_ratio * X_train.shape[0]), a_min=0,
-                               a_max=X_train.shape[0] - 1).astype(int)
+            skip_idx = np.clip(np.rint(self.data_contamination * class_objects.shape[0]), a_min=0,
+                               a_max=class_objects.shape[0] - 1).astype(int)
             self.max_distances.append(sorted_distances[skip_idx])
 
         return self
