@@ -19,6 +19,7 @@ from occ_ensemble import OCCEnsemble
 from occ_ensamble2 import OCCEnsemble2
 from occ_ensamble_dynamic_cls_selection import OCCEnsembleDynamicSelection
 from binary_decomposition import BinaryDecompositionEnsemble
+from occ_svm_max import OCCSVMMax
 from occ_nearest_mean import OCCNearestMean
 from occ_naive_bayes import OCCNaiveBayes
 from misc import *
@@ -51,12 +52,13 @@ def main():
         #          ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
     ]
     clfs = {
-        'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
+        'occ_svm_max': OCCSVMMax(svm_nu=0.015, svm_gamma=0.2),
         'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
         'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
         'nc': NearestCentroid(),
         'occ_nb': OCCNaiveBayes(data_contamination=0),
         'gnb': GaussianNB(),
+        # 'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
         # 'binary_decomposition': BinaryDecompositionEnsemble(),
         # 'occ_ensamble_2': OCCEnsemble2(ensemble_size=5, features_divisions=features_divisions, combination_type='max'),
         # 'occ_dynamic_selection': OCCEnsembleDynamicSelection(),
