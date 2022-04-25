@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn import clone
-from sklearn.metrics import balanced_accuracy_score, confusion_matrix, precision_score, recall_score
+from sklearn.metrics import balanced_accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier, NearestCentroid
 from sklearn.neural_network import MLPClassifier
@@ -76,6 +76,7 @@ def main():
 
     rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
     ba_scores = {k: [] for k in clfs.keys()}
+    f1_scores = {k: [] for k in clfs.keys()}
     precision_scores_single = {k: [] for k in clfs.keys()}
     precision_scores_multi = {k: [] for k in clfs.keys()}
     recall_scores_single = {k: [] for k in clfs.keys()}
@@ -110,15 +111,17 @@ def main():
             pipeline.fit(X_train, y_train)
             predict = pipeline.predict(X_test)
             ba_scores[clf_name].append(balanced_accuracy_score(y_test, predict))
-            precision_scores_single[clf_name].append(precision_score(y_test, predict, average='weighted'))
+            f1_scores[clf_name].append(f1_score(y_test, predict, average='macro'))
+            precision_scores_single[clf_name].append(precision_score(y_test, predict, average='macro'))
             precision_scores_multi[clf_name].append(precision_score(y_test, predict, average=None))
-            recall_scores_single[clf_name].append(recall_score(y_test, predict, average='weighted'))
+            recall_scores_single[clf_name].append(recall_score(y_test, predict, average='macro'))
             recall_scores_multi[clf_name].append(recall_score(y_test, predict, average=None))
             confusion_matrices[clf_name].append(confusion_matrix(y_test, predict))
 
     total_folds = n_splits * n_repeats
     assert total_folds == len(ba_scores[list(clfs.keys())[0]])
     scores_to_save = {
+        'f1': f1_scores,
         'balanced_accuracy': ba_scores,
         'precision': precision_scores_single,
         'recall': recall_scores_single,
@@ -135,6 +138,10 @@ def main():
     results_df.to_csv(path_or_buf=results_save_path, float_format='%.4f')
 
     for clf_name in clfs.keys():
+        mean_f1_score = np.mean(f1_scores[clf_name])
+        std_f1_score = np.std(f1_scores[clf_name])
+        print(f'{clf_name} - f1: %.3f +- %.3f' % (mean_f1_score, std_f1_score))
+
         mean_ba_score = np.mean(ba_scores[clf_name])
         std_ba_score = np.std(ba_scores[clf_name])
         print(f'{clf_name} - balanced accuracy: %.3f +- %.3f' % (mean_ba_score, std_ba_score))

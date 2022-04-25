@@ -69,15 +69,15 @@ def main():
             'clf__gamma': [0.0001, 0.001, 0.01, 0.1],
             # 'clf__class_weight': [None, 'balanced'],
             # 'clf__break_ties': [False, True],
-        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='balanced_accuracy',
-        results_path='../results/parameter_search/svc__grid_search__ba_score.csv')
+        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
+        results_path='../results/parameter_search/svc__grid_search__f1_score.csv')
 
     search_stock_estimator(
         estimator=Pipeline([*transformers, ('clf', OCCNaiveBayes())]),
         params={
             'clf__data_contamination': [0.1, 0.2, 0.3, 0.4, 0.5],
-        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='balanced_accuracy',
-        results_path='../results/parameter_search/occ_nb__grid_search__ba_score.csv')
+        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
+        results_path='../results/parameter_search/occ_nb__grid_search__f1_score.csv')
 
 
 if __name__ == '__main__':

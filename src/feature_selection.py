@@ -2,7 +2,7 @@ from imblearn.over_sampling import SMOTE
 from imblearn.pipeline import Pipeline
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn import clone
-from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score
+from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import NearestCentroid
@@ -50,6 +50,7 @@ def main():
         else:
             X = data_subset_preprocessed.iloc[:, :-1].to_numpy()
             y = data_subset_preprocessed.iloc[:, -1].to_numpy()
+        f1_scores = {k: [] for k in clfs.keys()}
         ba_scores = {k: [] for k in clfs.keys()}
         precision_scores = {k: [] for k in clfs.keys()}
         recall_scores = {k: [] for k in clfs.keys()}
@@ -81,20 +82,23 @@ def main():
                 pipeline.fit(X_train, y_train)
                 predict = pipeline.predict(X_test)
                 ba_scores[clf_name].append(balanced_accuracy_score(y_test, predict))
-                precision_scores[clf_name].append(precision_score(y_test, predict, average='weighted'))
-                recall_scores[clf_name].append(recall_score(y_test, predict, average='weighted'))
+                f1_scores[clf_name].append(f1_score(y_test, predict, average='macro'))
+                precision_scores[clf_name].append(precision_score(y_test, predict, average='macro'))
+                recall_scores[clf_name].append(recall_score(y_test, predict, average='macro'))
         for clf_name in clfs.keys():
             df_item = {'n_features': [n_features],
                        'data_successfully_preprocessed': [data_successfully_preprocessed],
                        'clf': [clf_name],
                        'ba_mean': [np.mean(ba_scores[clf_name])],
                        'ba_std': [np.std(ba_scores[clf_name])],
+                       'f1_mean': [np.mean(f1_scores[clf_name])],
+                       'f1_std': [np.std(f1_scores[clf_name])],
                        'precision_mean': [np.mean(precision_scores[clf_name])],
                        'precision_std': [np.std(precision_scores[clf_name])],
                        'recall_mean': [np.mean(recall_scores[clf_name])],
                        'recall_std': [np.std(recall_scores[clf_name])]}
             results_df = pd.concat((results_df, pd.DataFrame(df_item)), axis=0, ignore_index=True)
-    results_df.sort_values(by='ba_mean', inplace=True)
+    results_df.sort_values(by='f1_mean', inplace=True, ascending=False)
     results_df.to_csv(path_or_buf=save_path, float_format='%.2f')
 
 
