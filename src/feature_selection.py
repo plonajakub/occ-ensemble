@@ -1,22 +1,18 @@
-import pandas as pd
-import matplotlib.pyplot as plt
-
+from imblearn.over_sampling import SMOTE
+from imblearn.pipeline import Pipeline
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn import clone
 from sklearn.metrics import balanced_accuracy_score, precision_score, recall_score
 from sklearn.model_selection import RepeatedStratifiedKFold
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import RobustScaler, StandardScaler, MinMaxScaler, MaxAbsScaler
-from sklearn import svm
-from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import NearestCentroid
+from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
-from imblearn.pipeline import Pipeline
-from imblearn.combine import SMOTETomek
-
-from occ_ensemble import OCCEnsemble
-from occ_nearest_mean import OCCNearestMean
 from misc import *
+from occ_naive_bayes import OCCNaiveBayes
+from occ_nearest_mean import OCCNearestMean
+from occ_svm_max import OCCSVMMax
 
 
 def main():
@@ -26,24 +22,17 @@ def main():
     all_features_mi = ['Variance', 'AC.1', 'DL.1', 'MSTV', 'Width', 'Min', 'ASTV', 'Mean', 'ALTV', 'Mode', 'Median',
                        'Max', 'LB', 'MLTV', 'Nmax', 'DP.1', 'FM.1', 'UC.1', 'Nzeros', 'Tendency', 'DS.1']
     class_feature = ['CLASS']
-    all_features = all_features_anova
-    save_path = '../results/feature_selection/feature_selection_anova_results.csv'
+    all_features = all_features_mi
+    save_path = '../results/feature_selection/feature_selection_mi_results.csv'
 
     clfs = {
-        'occ_max_dist': OCCEnsemble(base_classifier=svm.OneClassSVM(nu=0.015, gamma=0.2)),
+        'occ_svm_max': OCCSVMMax(svm_nu=0.015, svm_gamma=0.2),
         'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
-        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.5),
-        'knn': KNeighborsClassifier(n_neighbors=5),
+        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
+        'nc': NearestCentroid(),
+        'occ_nb': OCCNaiveBayes(data_contamination=0),
         'gnb': GaussianNB(),
     }
-
-    transformers = [
-        ('scaler', StandardScaler()),
-        ('resampler', SMOTETomek(n_jobs=-1)),
-        # ('resampler', SMOTETomek(n_jobs=-1,
-        #                          sampling_strategy={1: 350, 2: 400, 3: 200, 4: 200, 5: 200,
-        #                                             6: 350, 7: 350, 8: 200, 9: 200, 10: 350})),
-    ]
 
     rskf = RepeatedStratifiedKFold(n_splits=5, n_repeats=2, random_state=1234)
     results_df = pd.DataFrame()
@@ -65,6 +54,25 @@ def main():
         precision_scores = {k: [] for k in clfs.keys()}
         recall_scores = {k: [] for k in clfs.keys()}
         for train_index, test_index in rskf.split(X, y):
+            y_counts = np.bincount(y[train_index])
+            transformers = [
+                ('scaler', StandardScaler()),
+                ('undersampler',
+                 RandomUnderSampler(sampling_strategy={
+                     1: int(0.75 * y_counts[1]),
+                     2: int(0.5 * y_counts[2]),
+                     6: int(0.75 * y_counts[6]),
+                 }, random_state=1234)),
+                ('oversampler',
+                 SMOTE(sampling_strategy={
+                     3: int(5 * y_counts[3]),
+                     4: int(3 * y_counts[4]),
+                     5: int(4 * y_counts[5]),
+                     8: int(2.5 * y_counts[8]),
+                     9: int(4 * y_counts[9]),
+                     10: int(1.3 * y_counts[10]),
+                 }, random_state=1234, n_jobs=-1))
+            ]
             for clf_name, clf in clfs.items():
                 clf = clone(clf)
                 pipeline = Pipeline([*transformers, ('clf', clf)])
