@@ -10,6 +10,8 @@ from sklearn.model_selection import RepeatedStratifiedKFold
 
 from src.misc import preprocess_data
 from occ_naive_bayes import OCCNaiveBayes
+from occ_svm_max import OCCSVMMax
+from occ_nearest_mean import OCCNearestMean
 
 
 def search_stock_estimator(estimator, params, X, y, n_splits, scoring, results_path, ):
@@ -63,19 +65,40 @@ def main():
     ]
 
     search_stock_estimator(
-        estimator=Pipeline([*transformers, ('clf', SVC())]),
+        estimator=Pipeline([*transformers, ('clf', OCCSVMMax())]),
         params={
-            'clf__C': [0.01, 0.1, 1, 2],
-            'clf__gamma': [0.0001, 0.001, 0.01, 0.1],
-            # 'clf__class_weight': [None, 'balanced'],
-            # 'clf__break_ties': [False, True],
+            'clf__svm_nu': np.linspace(0.1, 1, 10),  # Should be in the interval (0, 1]
+            'clf__svm_gamma': np.linspace(0.1, 2, 20),  # > 0
+        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
+        results_path='../results/parameter_search/occ_svm_max__grid_search__f1_score.csv')
+
+    search_stock_estimator(
+        estimator=Pipeline([*transformers, ('clf', SVC(break_ties=True))]),
+        params={
+            'clf__C': np.logspace(-2, 10, 13),  # > 0
+            'clf__gamma': np.logspace(-9, 3, 13),
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/svc__grid_search__f1_score.csv')
 
     search_stock_estimator(
+        estimator=Pipeline([*transformers, ('clf', OCCNearestMean(combination_type='knn'))]),
+        params={
+            'clf__knn_neighbors': [1] + list(np.arange(5, 105, 5, dtype=int)),  # > 0
+            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
+        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
+        results_path='../results/parameter_search/occ_nm_knn__grid_search__f1_score.csv')
+
+    search_stock_estimator(
+        estimator=Pipeline([*transformers, ('clf', OCCNearestMean(combination_type='max'))]),
+        params={
+            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
+        }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
+        results_path='../results/parameter_search/occ_nm_max__grid_search__f1_score.csv')
+
+    search_stock_estimator(
         estimator=Pipeline([*transformers, ('clf', OCCNaiveBayes())]),
         params={
-            'clf__data_contamination': [0.1, 0.2, 0.3, 0.4, 0.5],
+            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/occ_nb__grid_search__f1_score.csv')
 
