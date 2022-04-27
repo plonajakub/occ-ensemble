@@ -12,12 +12,14 @@ class OCCNearestMean(BaseEnsemble):
     def __init__(self,
                  knn_neighbors=5,
                  data_contamination=0.00,
+                 combination_type='knn',
                  random_state=None, ):
         self.knn_neighbors = knn_neighbors
-        self.resolve_classifier = KNeighborsClassifier(n_neighbors=knn_neighbors, n_jobs=-1)
         self.data_contamination = data_contamination
+        self.combination_type = combination_type
         self.random_state = random_state
 
+        self.resolve_classifier = None
         self.means = []
         self.max_distances = []  # max distances from means
         self.classes = None
@@ -28,6 +30,11 @@ class OCCNearestMean(BaseEnsemble):
         X, y = check_X_y(X, y)
         self.classes = np.unique(y)
         self.n_features = X.shape[1]
+
+        if self.combination_type not in ['max', 'knn']:
+            raise ValueError(f'Possible combination types: max, knn; got {self.combination_type}')
+
+        self.resolve_classifier = KNeighborsClassifier(n_neighbors=self.knn_neighbors, n_jobs=-1)
 
         # X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.train_split_size, stratify=y)
         X_train, X_val, y_train, y_val = X, None, y, None
@@ -55,26 +62,32 @@ class OCCNearestMean(BaseEnsemble):
 
         distances = euclidean_distances(X, self.means)
         boundary_offset = np.array(self.max_distances)[np.newaxis, :] - distances
-        predictions = []
-        for dfv, prd_obj in zip(boundary_offset, X):  # dfv - decision function vector
-            pred = np.argmax(dfv)
 
-            if dfv[pred] < 0:
-                predictions.append(self.classes[pred])
-                continue
+        assert self.combination_type in ['knn', 'max']
+        if self.combination_type == 'knn':
+            predictions = []
+            for dfv, prd_obj in zip(boundary_offset, X):  # dfv - decision function vector
+                pred = np.argmax(dfv)
 
-            inliers = []
-            for idx, df in enumerate(dfv):
-                if df >= 0:
-                    inliers.append(self.classes[idx])
-            if len(inliers) == 1:
-                predictions.append(self.classes[pred])
-                continue
+                if dfv[pred] < 0:
+                    predictions.append(self.classes[pred])
+                    continue
 
-            tmp_resolve_cls = clone(self.resolve_classifier)
-            selected_train_data = self.train_df.loc[self.train_df['y'].isin(inliers)]
-            tmp_resolve_cls.fit(selected_train_data.iloc[:, :-1], selected_train_data['y'])
-            resolved_pred = tmp_resolve_cls.predict(prd_obj[np.newaxis, :])
-            predictions.append(resolved_pred[0])
+                inliers = []
+                for idx, df in enumerate(dfv):
+                    if df >= 0:
+                        inliers.append(self.classes[idx])
+                if len(inliers) == 1:
+                    predictions.append(self.classes[pred])
+                    continue
 
-        return predictions
+                tmp_resolve_cls = clone(self.resolve_classifier)
+                selected_train_data = self.train_df.loc[self.train_df['y'].isin(inliers)]
+                tmp_resolve_cls.fit(selected_train_data.iloc[:, :-1], selected_train_data['y'])
+                resolved_pred = tmp_resolve_cls.predict(prd_obj[np.newaxis, :])
+                predictions.append(resolved_pred[0])
+
+            return predictions
+        else:  # self.combination_type == 'max'
+            predictions = np.argmax(boundary_offset, axis=1)
+            return self.classes[predictions]

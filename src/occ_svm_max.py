@@ -12,9 +12,9 @@ class OCCSVMMax(BaseEnsemble):
                  random_state=None, ):
         self.svm_nu = svm_nu
         self.svm_gamma = svm_gamma
-        self.base_classifier = svm.OneClassSVM(nu=svm_nu, gamma=svm_gamma)
         self.random_state = random_state
 
+        self.base_classifier = None
         self.classifiers = []
         self.classes = None
         self.n_features = None
@@ -23,6 +23,8 @@ class OCCSVMMax(BaseEnsemble):
         X, y = check_X_y(X, y)
         self.classes = np.unique(y)
         self.n_features = X.shape[1]
+
+        self.base_classifier = svm.OneClassSVM(nu=self.svm_nu, gamma=self.svm_gamma)
 
         X_train, X_val, y_train, y_val = X, None, y, None
 
