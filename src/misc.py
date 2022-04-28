@@ -3,12 +3,51 @@ from matplotlib.colors import Normalize
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.neighbors import LocalOutlierFactor
+
+resampling_multipliers = {
+    1: 0.75,
+    2: 0.5,
+    3: 5,
+    4: 3.5,
+    5: 3.7,
+    6: 0.85,
+    7: 1,
+    8: 2.5,
+    9: 3.9,
+    10: 1.35
+}
 
 
 def preprocess_data(df: DataFrame):
+    print('### Data Preprocessing ###')
+    print(f'Input shape: {df.shape}')
+    # numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), 'Distribution of classes before preprocessing', 'Class', 'Occurrences')
+
+    n_obj_before_duplicates = df.shape[0]
     df = df.drop_duplicates()  # regular duplicates
+    n_obj_after_duplicates = df.shape[0]
+
+    n_obj_before_conflicts = df.shape[0]
     df = df.drop_duplicates(subset=df.columns.values[:-1], keep=False)  # conflicting data
+    n_obj_after_conflicts = df.shape[0]
+
+    n_obj_before_outliers = df.shape[0]
+    lof = LocalOutlierFactor()
+    is_inlier = lof.fit_predict(df.iloc[:, :-1])
+    is_inlier[is_inlier == -1] = 0
+    is_inlier = is_inlier.astype(bool)
+    df = df.loc[is_inlier]
+    n_obj_after_outliers = df.shape[0]
+
     # df = df.sample(frac=1).reset_index(drop=True)
+
+    print(f'Removed duplicates: {n_obj_before_duplicates - n_obj_after_duplicates}')
+    print(f'Removed conflicts: {n_obj_before_conflicts - n_obj_after_conflicts}')
+    print(f'Removed outliers: {n_obj_before_outliers - n_obj_after_outliers}')
+    print(f'Output shape: {df.shape}')
+    print('##########################')
+    numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), 'Distribution of classes after preprocessing', 'Class', 'Occurrences')
     return df
 
 
@@ -46,7 +85,26 @@ def plot_feature_selection_results(path):
     plt.show()
 
 
-def plot_parameter_search_heatmap(scores_df, p1_name, p1_range, p2_name, p2_range):
+def plot_parameter_search_plot(scores_df_path, param_df_key, param_name):
+    scores_df = pd.read_csv(scores_df_path)
+    scores_df_sorted = scores_df.sort_values(by=param_df_key)
+    plt.plot(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
+    plt.scatter(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
+    plt.xlabel(param_name)
+    plt.ylabel('Mean test score')
+    plt.grid()
+    plt.show()
+    plt.close()
+
+
+def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p2_df_key, midpoint=0.65, scientific=False):
+    """p1 changes first in data"""
+    scores_df = pd.read_csv(scores_df_path)
+    p1_range = scores_df[p1_df_key].unique()
+    p1_range.sort()
+    p2_range = scores_df[p2_df_key].unique()
+    p2_range.sort()
+
     class MidpointNormalize(Normalize):
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
             self.midpoint = midpoint
@@ -56,7 +114,7 @@ def plot_parameter_search_heatmap(scores_df, p1_name, p1_range, p2_name, p2_rang
             x, y = [self.vmin, self.midpoint, self.vmax], [0, 0.5, 1]
             return np.ma.masked_array(np.interp(value, x, y))
 
-    scores = scores_df["mean_test_score"].to_numpy().reshape(len(p1_range), len(p2_range))
+    scores = scores_df["mean_test_score"].to_numpy().reshape(len(p1_range), len(p2_range), order='F')
 
     plt.figure(figsize=(8, 6))
     plt.subplots_adjust(left=0.2, right=0.95, bottom=0.15, top=0.95)
@@ -64,27 +122,35 @@ def plot_parameter_search_heatmap(scores_df, p1_name, p1_range, p2_name, p2_rang
         scores,
         interpolation="nearest",
         cmap=plt.cm.hot,
-        norm=MidpointNormalize(midpoint=0.65),
+        norm=MidpointNormalize(midpoint=midpoint),
     )
     plt.xlabel(p2_name)
     plt.ylabel(p1_name)
     plt.colorbar()
-    plt.xticks(np.arange(len(p2_range)), p2_range, rotation=45)
-    plt.yticks(np.arange(len(p1_range)), p1_range)
+    if scientific:
+        p2_range_sct = [np.format_float_scientific(el, precision=1) for el in p2_range]
+        p1_range_sct = [np.format_float_scientific(el, precision=1) for el in p1_range]
+        plt.xticks(np.arange(len(p2_range)), p2_range_sct, rotation=45)
+        plt.yticks(np.arange(len(p1_range)), p1_range_sct)
+    else:
+        plt.xticks(np.arange(len(p2_range)), p2_range, rotation=45)
+        plt.yticks(np.arange(len(p1_range)), p1_range)
     plt.title("Validation accuracy")
     plt.show()
     plt.close()
 
 
 def main():
-    plot_feature_selection_results('../results/feature_selection/feature_selection_results.csv')
+    # plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
 
-    # svc_gs_results_df = pd.read_csv('../results/parameter_search/svc__grid_search__ba_score.csv')
-    # C_range = svc_gs_results_df['param_clf__C'].unique()
-    # C_range.sort()
-    # gamma_range = svc_gs_results_df['param_clf__gamma'].unique()
-    # gamma_range.sort()
-    # plot_parameter_search_heatmap(svc_gs_results_df, 'C', C_range, 'gamma', gamma_range)
+    # plot_parameter_search_heatmap('../results/parameter_search/occ_svm_max__grid_search__f1_score.csv',
+    #                               'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5)
+
+    plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
+                                  'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
+
+    # plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__ba_score.csv',
+    #                            'param_clf__data_contamination', 'Data contamination')
 
 
 if __name__ == '__main__':

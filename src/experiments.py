@@ -22,7 +22,8 @@ from binary_decomposition import BinaryDecompositionEnsemble
 from occ_svm_max import OCCSVMMax
 from occ_nearest_mean import OCCNearestMean
 from occ_naive_bayes import OCCNaiveBayes
-from misc import *
+from misc import preprocess_data
+from misc import resampling_multipliers as r_mltps
 
 
 def main():
@@ -89,18 +90,18 @@ def main():
             ('scaler', StandardScaler()),
             ('undersampler',
              RandomUnderSampler(sampling_strategy={
-                 1: int(0.75 * y_counts[1]),
-                 2: int(0.5 * y_counts[2]),
-                 6: int(0.75 * y_counts[6]),
+                 1: int(r_mltps[1] * y_counts[1]),
+                 2: int(r_mltps[2] * y_counts[2]),
+                 6: int(r_mltps[6] * y_counts[6]),
              }, random_state=1234)),
             ('oversampler',
              SMOTE(sampling_strategy={
-                 3: int(5 * y_counts[3]),
-                 4: int(3 * y_counts[4]),
-                 5: int(4 * y_counts[5]),
-                 8: int(2.5 * y_counts[8]),
-                 9: int(4 * y_counts[9]),
-                 10: int(1.3 * y_counts[10]),
+                 3: int(r_mltps[3] * y_counts[3]),
+                 4: int(r_mltps[4] * y_counts[4]),
+                 5: int(r_mltps[5] * y_counts[5]),
+                 8: int(r_mltps[8] * y_counts[8]),
+                 9: int(r_mltps[9] * y_counts[9]),
+                 10: int(r_mltps[10] * y_counts[10]),
              }, random_state=1234, n_jobs=-1))
         ]
         for clf_name, clf in clfs.items():
