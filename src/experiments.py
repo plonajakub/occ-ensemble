@@ -27,7 +27,7 @@ from misc import resampling_multipliers as r_mltps
 
 
 def main():
-    results_save_path = '../results/experiments/test_results.csv'
+    results_save_dir = '../results/experiments/'
 
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
     selected_features = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'Variance', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
@@ -77,7 +77,8 @@ def main():
 
     rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
     ba_scores = {k: [] for k in clfs.keys()}
-    f1_scores = {k: [] for k in clfs.keys()}
+    f1_scores_single = {k: [] for k in clfs.keys()}
+    f1_scores_multi = {k: [] for k in clfs.keys()}
     precision_scores_single = {k: [] for k in clfs.keys()}
     precision_scores_multi = {k: [] for k in clfs.keys()}
     recall_scores_single = {k: [] for k in clfs.keys()}
@@ -112,7 +113,8 @@ def main():
             pipeline.fit(X_train, y_train)
             predict = pipeline.predict(X_test)
             ba_scores[clf_name].append(balanced_accuracy_score(y_test, predict))
-            f1_scores[clf_name].append(f1_score(y_test, predict, average='macro'))
+            f1_scores_single[clf_name].append(f1_score(y_test, predict, average='macro'))
+            f1_scores_multi[clf_name].append(f1_score(y_test, predict, average=None))
             precision_scores_single[clf_name].append(precision_score(y_test, predict, average='macro'))
             precision_scores_multi[clf_name].append(precision_score(y_test, predict, average=None))
             recall_scores_single[clf_name].append(recall_score(y_test, predict, average='macro'))
@@ -121,26 +123,51 @@ def main():
 
     total_folds = n_splits * n_repeats
     assert total_folds == len(ba_scores[list(clfs.keys())[0]])
-    scores_to_save = {
-        'f1': f1_scores,
+
+    scores_to_save_db = {
+        'f1': f1_scores_single,
         'balanced_accuracy': ba_scores,
         'precision': precision_scores_single,
         'recall': recall_scores_single,
     }
-
     results_df = pd.DataFrame()
     for fold_idx in range(total_folds):
-        for score_name in scores_to_save.keys():
+        for score_name in scores_to_save_db.keys():
             df_item = {'score_name': [score_name], 'fold_idx': [fold_idx]}
             for clf_name in clfs.keys():
-                df_item[clf_name] = [scores_to_save[score_name][clf_name][fold_idx]]
+                df_item[clf_name] = [scores_to_save_db[score_name][clf_name][fold_idx]]
             results_df = pd.concat((results_df, pd.DataFrame(df_item)), axis=0, ignore_index=True)
     results_df.sort_values(by='score_name', inplace=True)
-    results_df.to_csv(path_or_buf=results_save_path, float_format='%.4f')
+    results_df.to_csv(path_or_buf=f'{results_save_dir}/test_results_db.csv', float_format='%.4f')
+
+    scores_to_save_simple = {
+        'f1': f1_scores_single,
+        'balanced_accuracy': ba_scores,
+        'precision': precision_scores_single,
+        'recall': recall_scores_single,
+    }
+    for score_name, score_values in scores_to_save_simple.items():
+        results_df_simple = pd.DataFrame(score_values)
+        results_df_simple.to_csv(path_or_buf=f'{results_save_dir}/test_results_simple_{score_name}.csv',
+                                 float_format='%.4f')
+
+    scores_to_save_multiclass = {
+        'f1': f1_scores_multi,
+        'precision': precision_scores_multi,
+        'recall': recall_scores_multi,
+    }
+    for score_name, score_values in scores_to_save_multiclass.items():
+        results_df_multiclass = pd.DataFrame()
+        for cls_name, fold_class_matrix in score_values.items():
+            fold_class_matrix_np = np.array(fold_class_matrix)
+            for class_id in range(fold_class_matrix_np.shape[1]):
+                results_df_multiclass[f'{cls_name}_{class_id + 1}'] = fold_class_matrix_np[:, class_id]
+        results_df_multiclass.to_csv(path_or_buf=f'{results_save_dir}/test_results_multiclass_{score_name}.csv',
+                                     float_format='%.4f')
 
     for clf_name in clfs.keys():
-        mean_f1_score = np.mean(f1_scores[clf_name])
-        std_f1_score = np.std(f1_scores[clf_name])
+        mean_f1_score = np.mean(f1_scores_single[clf_name])
+        std_f1_score = np.std(f1_scores_single[clf_name])
         print(f'{clf_name} - f1: %.3f +- %.3f' % (mean_f1_score, std_f1_score))
 
         mean_ba_score = np.mean(ba_scores[clf_name])
