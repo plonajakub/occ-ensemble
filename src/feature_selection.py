@@ -30,7 +30,7 @@ def main():
 
     clfs = {
         'occ_svm_max': OCCSVMMax(svm_nu=0.015, svm_gamma=0.2),
-        'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
+        'svc': SVC(C=2, gamma=0.04, break_ties=True),
         'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
         'nc': NearestCentroid(),
         'occ_nb': OCCNaiveBayes(data_contamination=0),

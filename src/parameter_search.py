@@ -69,7 +69,7 @@ def main():
         estimator=Pipeline([*transformers, ('clf', OCCSVMMax())]),
         params={
             'clf__svm_nu': np.round(np.linspace(0.1, 1, 10), decimals=3),  # Should be in the interval (0, 1]
-            'clf__svm_gamma': np.round(np.linspace(0.1, 2, 20), decimals=3),  # > 0
+            'clf__svm_gamma': np.logspace(-9, 3, 13),  # > 0
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/occ_svm_max__grid_search__f1_score.csv')
 
@@ -84,22 +84,22 @@ def main():
     search_stock_estimator(
         estimator=Pipeline([*transformers, ('clf', OCCNearestMean(combination_type='knn'))]),
         params={
-            'clf__knn_neighbors': [1] + list(np.arange(5, 105, 5, dtype=int)),  # > 0
-            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
+            'clf__knn_neighbors': np.arange(1, 11, 1, dtype=int),  # > 0
+            'clf__data_contamination': np.round(np.arange(0, 0.5, 0.05, dtype=float), decimals=3),  # in [0, 1)
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/occ_nm_knn__grid_search__f1_score.csv')
 
     search_stock_estimator(
         estimator=Pipeline([*transformers, ('clf', OCCNearestMean(combination_type='max'))]),
         params={
-            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
+            'clf__data_contamination': np.round(np.arange(0, 0.5, 0.01, dtype=float), decimals=3),  # in [0, 1)
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/occ_nm_max__grid_search__f1_score.csv')
 
     search_stock_estimator(
         estimator=Pipeline([*transformers, ('clf', OCCNaiveBayes())]),
         params={
-            'clf__data_contamination': np.arange(0, 1, 0.1, dtype=float),  # in [0, 1)
+            'clf__data_contamination': np.round(np.arange(0, 0.5, 0.01, dtype=float), decimals=3),  # in [0, 1)
         }, X=X, y=y, n_splits=cross_validation_n_splits, scoring='f1_macro',
         results_path='../results/parameter_search/occ_nb__grid_search__f1_score.csv')
 
