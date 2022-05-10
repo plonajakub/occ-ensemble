@@ -72,14 +72,14 @@ def plot_feature_selection_results(path):
         clf_df = df[df['clf'] == clf]
         clf_df_sorted = clf_df.sort_values(by='n_features')
         x = clf_df_sorted['n_features']
-        y = clf_df_sorted['ba_mean']
+        y = clf_df_sorted['f1_mean']
         plt.xticks(np.arange(df['n_features'].min(), df['n_features'].max() + 1, 1))
         plt.plot(x, y, label=f'{clf}')
         plt.scatter(x, y)
     plt.legend()
     plt.grid()
     plt.xlabel('Liczba cech')
-    plt.ylabel('Zbalansowana dokładność')
+    plt.ylabel('F1')
     # plt.title('Selekcja cech')
     plt.tight_layout()
     plt.show()
@@ -141,13 +141,14 @@ def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p
 
 
 def main():
-    # plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
+    plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
+    plot_feature_selection_results('../results/feature_selection/feature_selection_anova_results.csv')
 
     # plot_parameter_search_heatmap('../results/parameter_search/occ_svm_max__grid_search__f1_score.csv',
     #                               'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5)
 
-    plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
-                                  'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
+    # plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
+    #                               'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
 
     # plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__ba_score.csv',
     #                            'param_clf__data_contamination', 'Data contamination')
