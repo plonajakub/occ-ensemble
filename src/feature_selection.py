@@ -20,10 +20,10 @@ from occ_svm_max import OCCSVMMax
 
 def main():
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
-    all_features_anova = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'Variance', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
-                          'ASTV', 'Max', 'Nmax', 'UC.1', 'MLTV', 'LB', 'Tendency', 'Nzeros', 'DS.1', 'FM.1']
-    all_features_mi = ['Variance', 'AC.1', 'DL.1', 'MSTV', 'Width', 'Min', 'ASTV', 'Mean', 'ALTV', 'Mode', 'Median',
-                       'Max', 'LB', 'MLTV', 'Nmax', 'DP.1', 'FM.1', 'UC.1', 'Nzeros', 'Tendency', 'DS.1']
+    all_features_anova = ['DL.1', 'AC.1', 'DP.1', 'ALTV', 'Variance', 'Mean', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
+                          'ASTV', 'Nmax', 'Max', 'UC.1', 'MLTV', 'LB', 'Tendency', 'Nzeros', 'DS.1', 'FM.1']
+    all_features_mi = ['Width', 'Variance', 'Min', 'AC.1', 'DL.1', 'MSTV', 'ASTV', 'Mean', 'Max', 'Mode', 'ALTV',
+                       'Median', 'LB', 'Nmax', 'MLTV', 'DP.1', 'UC.1', 'FM.1', 'Nzeros', 'Tendency', 'DS.1']
     class_feature = ['CLASS']
     all_features = all_features_mi
     save_path = '../results/feature_selection/feature_selection_mi_results.csv'
