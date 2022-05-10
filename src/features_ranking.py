@@ -4,6 +4,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.feature_selection import SelectKBest, f_classif, mutual_info_classif
 
+from src.misc import preprocess_data
+
 
 def rate_features_anova(df):
     df_values = df.values
@@ -51,12 +53,15 @@ def print_feature_scores(features, scores, title, xlabel):
 if __name__ == '__main__':
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
     all_df = data.iloc[:, :-1]
+    all_df = preprocess_data(all_df)
 
     scores_all = rate_features_anova(all_df)
     print_feature_scores(list(all_df.columns.values[:-1]), scores_all,
                          title="ANOVA", xlabel='F')
 
     scores_mi_all = rate_features_mutual_info(
-        all_df, discrete_features_indexes=[20])  # also discrete features should be added here (not only categorical)
+        all_df,
+        discrete_features_indexes=[0, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    )  # discrete features should be here (not only categorical), for example pixel intensities
     print_feature_scores(list(all_df.columns.values[:-1]), scores_mi_all,
                          title="Mutual information", xlabel='mi')
