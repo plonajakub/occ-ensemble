@@ -30,8 +30,11 @@ def main():
     results_save_dir = '../results/experiments/'
 
     data = pd.read_excel('../data/CTG.xls', sheet_name='Data', header=1, usecols='K:AE,AR,AT', nrows=2126)
-    selected_features = ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'Mean', 'Variance', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
-                         'ASTV', 'Max', 'Nmax', 'UC.1', 'MLTV', 'LB']
+    all_features_anova = ['DL.1', 'AC.1', 'DP.1', 'ALTV', 'Variance', 'Mean', 'Width', 'Min', 'MSTV', 'Median', 'Mode',
+                          'ASTV', 'Nmax', 'Max', 'UC.1', 'MLTV', 'LB', 'Tendency', 'Nzeros', 'DS.1', 'FM.1']
+    all_features_mi = ['Width', 'Variance', 'Min', 'AC.1', 'DL.1', 'MSTV', 'ASTV', 'Mean', 'Max', 'Mode', 'ALTV',
+                       'Median', 'LB', 'Nmax', 'MLTV', 'DP.1', 'UC.1', 'FM.1', 'Nzeros', 'Tendency', 'DS.1']
+    selected_features = all_features_mi[:17]
     sf_f2int = {f: i for i, f in enumerate(selected_features)}
     class_feature = ['CLASS']
     data = data[selected_features + class_feature]
