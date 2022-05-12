@@ -150,6 +150,10 @@ def main():
     plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
                                   'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
 
+    plot_parameter_search_heatmap('../results/parameter_search/occ_nm_knn__grid_search__f1_score.csv',
+                                  'knn_neighbors', 'param_clf__knn_neighbors', 'data_contamination', 'param_clf__data_contamination',
+                                  midpoint=0.70, scientific=False)
+
     plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__f1_score.csv',
                                'param_clf__data_contamination', 'Data contamination - nb', 'F1')
 
