@@ -85,13 +85,13 @@ def plot_feature_selection_results(path):
     plt.show()
 
 
-def plot_parameter_search_plot(scores_df_path, param_df_key, param_name):
+def plot_parameter_search_plot(scores_df_path, param_df_key, param_name, y_label):
     scores_df = pd.read_csv(scores_df_path)
     scores_df_sorted = scores_df.sort_values(by=param_df_key)
     plt.plot(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
     plt.scatter(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
     plt.xlabel(param_name)
-    plt.ylabel('Mean test score')
+    plt.ylabel(y_label)
     plt.grid()
     plt.show()
     plt.close()
@@ -135,23 +135,26 @@ def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p
     else:
         plt.xticks(np.arange(len(p2_range)), p2_range, rotation=45)
         plt.yticks(np.arange(len(p1_range)), p1_range)
-    plt.title("Validation accuracy")
+    # plt.title("Validation accuracy")
     plt.show()
     plt.close()
 
 
 def main():
-    plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
-    plot_feature_selection_results('../results/feature_selection/feature_selection_anova_results.csv')
+    # plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
+    # plot_feature_selection_results('../results/feature_selection/feature_selection_anova_results.csv')
 
-    # plot_parameter_search_heatmap('../results/parameter_search/occ_svm_max__grid_search__f1_score.csv',
-    #                               'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5)
+    plot_parameter_search_heatmap('../results/parameter_search/occ_svm_max__grid_search__f1_score.csv',
+                                  'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5, scientific=True)
 
-    # plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
-    #                               'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
+    plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
+                                  'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
 
-    # plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__ba_score.csv',
-    #                            'param_clf__data_contamination', 'Data contamination')
+    plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__f1_score.csv',
+                               'param_clf__data_contamination', 'Data contamination - nb', 'F1')
+
+    plot_parameter_search_plot('../results/parameter_search/occ_nm_max__grid_search__f1_score.csv',
+                               'param_clf__data_contamination', 'Data contamination - nm_max', 'F1')
 
 
 if __name__ == '__main__':
