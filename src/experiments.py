@@ -56,9 +56,9 @@ def main():
         #          ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
     ]
     clfs = {
-        'occ_svm_max': OCCSVMMax(svm_nu=0.015, svm_gamma=0.2),
-        'svc': SVC(C=2, gamma=0.04, class_weight='balanced', break_ties=True),
-        'occ_nearest_mean': OCCNearestMean(knn_neighbors=5, data_contamination=0.1),
+        'occ_svm_max': OCCSVMMax(svm_nu=0.1, svm_gamma=0.1),
+        'svc': SVC(C=100, gamma=0.01, break_ties=True),
+        'occ_nearest_mean': OCCNearestMean(knn_neighbors=1, data_contamination=0),
         'nc': NearestCentroid(),
         'occ_nb': OCCNaiveBayes(data_contamination=0),
         'gnb': GaussianNB(),
@@ -76,7 +76,7 @@ def main():
     }
 
     n_splits = 5
-    n_repeats = 2
+    n_repeats = 6
 
     rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
     ba_scores = {k: [] for k in clfs.keys()}
