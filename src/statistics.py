@@ -21,10 +21,10 @@ def do_wilcoxon_test_simple(df_path, series_1_name, series_2_name):
     print('###############################')
 
     stat, p_val = wilcoxon(series_1.tolist(), series_2.tolist())
-    print(f'{series_1_name} vs {series_2_name} (wilcoxon): \nstat={stat:.3f} \npval={p_val:.3f}')
+    print(f'{series_1_name} vs {series_2_name} (wilcoxon): \nstat={stat:.3e} \npval={p_val:.3e}')
 
 
-def do_wilcoxon_test_multiclass(df_path, series_1_name, series_2_name):
+def do_wilcoxon_test_multiclass(df_path, series_1_name, series_2_name, metric):
     df = pd.read_csv(df_path)
     results_df = pd.DataFrame()
     for class_name in range(1, 11):
@@ -67,13 +67,19 @@ def do_wilcoxon_test_multiclass(df_path, series_1_name, series_2_name):
         results_df = pd.concat((results_df, pd.DataFrame(appendable_row)), axis=0, ignore_index=True)
 
     print(results_df)
-    results_df.to_csv(f'../results/statistics/wilcoxon__{series_1_name}__{series_2_name}__multiclass.csv',
-                      float_format='%.3f')
+    results_df.to_csv(f'../results/statistics/wilcoxon__{series_1_name}__{series_2_name}__{metric}__multiclass.csv',
+                      float_format='%.3e'
+                      )
 
 
 def main():
+    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_svm_max', 'svc')
+    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nearest_mean', 'nc')
     do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nb', 'gnb')
-    do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_nb', 'gnb')
+
+    do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_svm_max', 'svc', 'f1')
+    do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_nearest_mean', 'nc', 'f1')
+    do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_nb', 'gnb', 'f1')
 
 
 if __name__ == '__main__':
