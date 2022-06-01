@@ -150,6 +150,7 @@ def print_multiclass_boxplots(path, classifiers, ylabel, metric, classes=None):
     sns.boxplot(x='Klasa', y='Metryka', hue='Klasyfikator', data=df, showmeans=True)
 
     plt.ylabel(ylabel)
+    plt.grid(axis='x')
     plt.tight_layout()
     plt.savefig(f'../results/statistics/boxplots/boxplot_multi_{classes}_{"_".join(classifiers)}_{metric}')
     plt.close()
