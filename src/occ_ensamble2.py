@@ -12,8 +12,9 @@ class OCCEnsemble2(BaseEnsemble):
                  base_classifier=svm.OneClassSVM(nu=0.01, kernel='rbf', gamma=0.01),
                  features_divisions=None,
                  ensemble_size=10,
+                 combination_type='max',
                  val_size=0.2,
-                 combination_classifier=svm.OneClassSVM(nu=0.01, kernel='rbf', gamma=0.01),
+                 combination_classifier=svm.OneClassSVM(nu=0.5, kernel='rbf', gamma=0.005),
                  random_state=None, ):
         self.base_classifier = base_classifier
         self.features_divisions = features_divisions
@@ -23,6 +24,7 @@ class OCCEnsemble2(BaseEnsemble):
         self.combination_classifier = combination_classifier
         self.combination_classifiers = {}
         self.random_state = random_state
+        self.combination_type = combination_type
         self.classes = None
         self.n_features = None
 
@@ -41,8 +43,10 @@ class OCCEnsemble2(BaseEnsemble):
         self.n_features = X.shape[1]
         self.classifiers = {c: [] for c in self.classes}
 
-        # X_train, X_val, y_train, y_val = X, None, y, None
-        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.val_size, stratify=y)
+        if self.combination_type == 'max':
+            X_train, X_val, y_train, y_val = X, None, y, None
+        else:
+            X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=self.val_size, stratify=y)
 
         for c in self.classes:
             for feature_set in self.features_divisions:
@@ -54,15 +58,16 @@ class OCCEnsemble2(BaseEnsemble):
                     b_cls.fit(X_train_class_bg)
                     self.classifiers[c].append(b_cls)
 
-        for c in self.classes:
-            distances = []
-            cls_id = 0
-            for feature_set in self.features_divisions:
-                for _ in range(self.ensemble_size):
-                    distances.append(self.classifiers[c][cls_id].decision_function(X_val[:, feature_set]))
-                    cls_id += 1
-            distances = np.array(distances).T
-            self.combination_classifiers[c] = clone(self.combination_classifier).fit(distances, y_val)
+        if self.combination_type != 'max':
+            for c in self.classes:
+                distances = []
+                cls_id = 0
+                for feature_set in self.features_divisions:
+                    for _ in range(self.ensemble_size):
+                        distances.append(self.classifiers[c][cls_id].decision_function(X_val[:, feature_set]))
+                        cls_id += 1
+                distances = np.array(distances).T
+                self.combination_classifiers[c] = clone(self.combination_classifier).fit(distances, y_val)
 
         return self
 
@@ -73,9 +78,17 @@ class OCCEnsemble2(BaseEnsemble):
             raise ValueError('Number of features is different from training phase')
 
         signed_distances = []
-        for c in self.classes:
-            signed_distances.append(self._get_class_prediction(c, X))
-        signed_distances = np.array(signed_distances)
-        signed_distances = np.max(signed_distances, axis=1)
+        if self.combination_type == 'max':
+            for c in self.classes:
+                signed_distances.append(self._get_class_prediction(c, X))
+            signed_distances = np.array(signed_distances)
+            signed_distances = np.max(signed_distances, axis=1)
+        else:
+            for c in self.classes:
+                class_distances = self._get_class_prediction(c, X)  # Combination classifiers dont work
+                class_distances = class_distances.T
+                signed_distances.append(self.combination_classifiers[c].decision_function(class_distances))
+            signed_distances = np.array(signed_distances)
+
         predictions = np.argmax(signed_distances, axis=0)
         return self.classes[predictions]
