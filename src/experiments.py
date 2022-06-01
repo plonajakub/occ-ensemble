@@ -141,7 +141,7 @@ def main():
                 df_item[clf_name] = [scores_to_save_db[score_name][clf_name][fold_idx]]
             results_df = pd.concat((results_df, pd.DataFrame(df_item)), axis=0, ignore_index=True)
     results_df.sort_values(by='score_name', inplace=True)
-    results_df.to_csv(path_or_buf=f'{results_save_dir}/test_results_db.csv', float_format='%.4f')
+    results_df.to_csv(path_or_buf=f'{results_save_dir}/test_results_db.csv')
 
     scores_to_save_simple = {
         'f1': f1_scores_single,
@@ -151,8 +151,7 @@ def main():
     }
     for score_name, score_values in scores_to_save_simple.items():
         results_df_simple = pd.DataFrame(score_values)
-        results_df_simple.to_csv(path_or_buf=f'{results_save_dir}/test_results_simple_{score_name}.csv',
-                                 float_format='%.4f')
+        results_df_simple.to_csv(path_or_buf=f'{results_save_dir}/test_results_simple_{score_name}.csv')
 
     scores_to_save_multiclass = {
         'f1': f1_scores_multi,
@@ -165,8 +164,7 @@ def main():
             fold_class_matrix_np = np.array(fold_class_matrix)
             for class_id in range(fold_class_matrix_np.shape[1]):
                 results_df_multiclass[f'{cls_name}_{class_id + 1}'] = fold_class_matrix_np[:, class_id]
-        results_df_multiclass.to_csv(path_or_buf=f'{results_save_dir}/test_results_multiclass_{score_name}.csv',
-                                     float_format='%.4f')
+        results_df_multiclass.to_csv(path_or_buf=f'{results_save_dir}/test_results_multiclass_{score_name}.csv')
 
     for clf_name in clfs.keys():
         mean_f1_score = np.mean(f1_scores_single[clf_name])

@@ -17,11 +17,11 @@ from occ_nearest_mean import OCCNearestMean
 
 def search_stock_estimator(estimator, params, X, y, n_splits, scoring, results_path, ):
     gs = GridSearchCV(estimator, params, scoring=scoring,
-                      cv=RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=1, random_state=None),
+                      cv=RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=1, random_state=1234),
                       n_jobs=-1, verbose=4, return_train_score=True)
     gs.fit(X, y)
     results_df = pd.DataFrame(gs.cv_results_)
-    results_df.to_csv(path_or_buf=results_path, float_format='%.2f')
+    results_df.to_csv(path_or_buf=results_path)
 
 
 def get_data(n_features):

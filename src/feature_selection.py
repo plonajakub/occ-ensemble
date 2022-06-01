@@ -102,7 +102,7 @@ def main():
                        'recall_std': [np.std(recall_scores[clf_name])]}
             results_df = pd.concat((results_df, pd.DataFrame(df_item)), axis=0, ignore_index=True)
     results_df.sort_values(by='f1_mean', inplace=True, ascending=False)
-    results_df.to_csv(path_or_buf=save_path, float_format='%.2f')
+    results_df.to_csv(path_or_buf=save_path)
 
 
 if __name__ == '__main__':
