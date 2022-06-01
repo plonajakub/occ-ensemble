@@ -122,7 +122,7 @@ def print_save_statistics(path, columns):
     df_dsc.to_csv(f'{dirname}/{filename}', float_format='%.3f')
 
 
-def print_boxplots(path, columns):
+def print_boxplots(path, columns, metric):
     df = pd.read_csv(path)
     df = df[columns]
 
@@ -130,11 +130,11 @@ def print_boxplots(path, columns):
     sns.boxplot(data=df, showmeans=True)
 
     plt.tight_layout()
-    plt.savefig(f'../results/img/boxplot_{"_".join(columns)}')
+    plt.savefig(f'../results/statistics/boxplots/boxplot_{"_".join(columns)}_{metric}')
     plt.close()
 
 
-def print_multiclass_boxplots(path, classifiers, ylabel, classes=None):
+def print_multiclass_boxplots(path, classifiers, ylabel, metric, classes=None):
     majority_classes = [1, 2, 6, 7]
     minority_classes = [3, 4, 5, 8, 9, 10]
 
@@ -151,7 +151,7 @@ def print_multiclass_boxplots(path, classifiers, ylabel, classes=None):
 
     plt.ylabel(ylabel)
     plt.tight_layout()
-    plt.savefig(f'../results/img/boxplot_multi_{classes}_{"_".join(classifiers)}')
+    plt.savefig(f'../results/statistics/boxplots/boxplot_multi_{classes}_{"_".join(classifiers)}_{metric}')
     plt.close()
 
 
@@ -186,41 +186,47 @@ def main():
     print_save_statistics('../results/experiments/test_results_simple_f1.csv', columns=['occ_nearest_mean', 'nc'])
     print_save_statistics('../results/experiments/test_results_simple_f1.csv', columns=['occ_nb', 'gnb'])
 
-    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_svm_max', 'svc'])
-    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nearest_mean', 'nc'])
-    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nb', 'gnb'])
+    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_svm_max', 'svc'], metric='f1')
+    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nearest_mean', 'nc'], metric='f1')
+    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nb', 'gnb'], metric='f1')
 
-    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_svm_max', 'svc'])
-    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nearest_mean', 'nc'])
-    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nb', 'gnb'])
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_svm_max', 'svc'],
+                   metric='precision')
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nearest_mean', 'nc'],
+                   metric='precision')
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nb', 'gnb'],
+                   metric='precision')
 
-    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_svm_max', 'svc'])
-    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nearest_mean', 'nc'])
-    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nb', 'gnb'])
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_svm_max', 'svc'],
+                   metric='recall')
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nearest_mean', 'nc'],
+                   metric='recall')
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nb', 'gnb'], metric='recall')
 
     convert_multiclass_format('../results/experiments/test_results_multiclass_f1.csv')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
-                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='F1')
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='F1', metric='f1')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
-                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='F1')
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='F1', metric='f1')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
-                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='F1')
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='F1', metric='f1')
 
     convert_multiclass_format('../results/experiments/test_results_multiclass_precision.csv')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
-                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Precyzja')
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Precyzja', metric='precision')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
-                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Precyzja')
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Precyzja',
+                              metric='precision')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
-                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Precyzja')
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Precyzja', metric='precision')
 
     convert_multiclass_format('../results/experiments/test_results_multiclass_recall.csv')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
-                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Czułość')
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Czułość', metric='recall')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
-                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Czułość')
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Czułość', metric='recall')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
-                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Czułość')
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Czułość', metric='recall')
 
 
 if __name__ == '__main__':
