@@ -22,7 +22,7 @@ resampling_multipliers = {
 def preprocess_data(df: DataFrame):
     print('### Data Preprocessing ###')
     print(f'Input shape: {df.shape}')
-    # numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), 'Distribution of classes before preprocessing', 'Class', 'Occurrences')
+    numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), '', 'Klasa', 'Wystąpienia')
 
     n_obj_before_duplicates = df.shape[0]
     df = df.drop_duplicates()  # regular duplicates
@@ -47,7 +47,7 @@ def preprocess_data(df: DataFrame):
     print(f'Removed outliers: {n_obj_before_outliers - n_obj_after_outliers}')
     print(f'Output shape: {df.shape}')
     print('##########################')
-    numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), 'Distribution of classes after preprocessing', 'Class', 'Occurrences')
+    numpy_ds_bar_plot(df.iloc[:, -1].to_numpy(), '', 'Klasa', 'Wystąpienia')
     return df
 
 
