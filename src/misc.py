@@ -160,7 +160,7 @@ def main():
                                   midpoint=0.70, scientific=False)
 
     plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__f1_score.csv',
-                               'param_clf__data_contamination', 'Data contamination - nb', 'F1')
+                               'param_clf__data_contamination', 'data_contamination', 'F1')
 
     plot_parameter_search_plot('../results/parameter_search/occ_nm_max__grid_search__f1_score.csv',
                                'param_clf__data_contamination', 'Data contamination - nm_max', 'F1')
