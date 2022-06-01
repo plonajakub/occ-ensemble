@@ -6,8 +6,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-def do_wilcoxon_test_simple(df_path, series_1_name, series_2_name):
+def do_wilcoxon_test_simple(df_path, series_1_name, series_2_name, metric, float_length=3):
     df = pd.read_csv(df_path)
+    df_dscr = df.describe()
 
     series_1 = df[series_1_name]
     print('###############################')
@@ -25,6 +26,19 @@ def do_wilcoxon_test_simple(df_path, series_1_name, series_2_name):
 
     stat, p_val = wilcoxon(series_1.tolist(), series_2.tolist())
     print(f'{series_1_name} vs {series_2_name} (wilcoxon): \nstat={stat:.3e} \npval={p_val:.3e}')
+    s1_median = df_dscr.loc['50%', series_1_name]
+    s2_median = df_dscr.loc['50%', series_2_name]
+    series_with_stat_adv = '-'
+    if p_val < 0.05:
+        if s1_median > s2_median:
+            series_with_stat_adv = series_1_name
+        else:
+            series_with_stat_adv = series_2_name
+    p_val_presentation = '< 0.001' if p_val < 0.001 else round(p_val, 3)
+    results_dict = {'Statystyka': [stat], 'P-wartość': [p_val_presentation], 'Przewaga': [series_with_stat_adv]}
+    results_df = pd.DataFrame(results_dict)
+    results_df.to_csv(f'../results/statistics/wilcoxon_{series_1_name}_{series_2_name}_{metric}_average.csv',
+                      float_format=f'%.{float_length}f', index=False)
 
 
 def do_wilcoxon_test_multiclass(df_path, series_1_name, series_2_name, metric, float_length=3):
@@ -160,9 +174,9 @@ def convert_multiclass_format(path):
 
 
 def main():
-    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_svm_max', 'svc')
-    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nearest_mean', 'nc')
-    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nb', 'gnb')
+    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_svm_max', 'svc', 'f1')
+    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nearest_mean', 'nc', 'f1')
+    do_wilcoxon_test_simple('../results/experiments/test_results_simple_f1.csv', 'occ_nb', 'gnb', 'f1')
 
     do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_svm_max', 'svc', 'f1')
     do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_nearest_mean', 'nc', 'f1')
@@ -176,6 +190,8 @@ def main():
                               classifiers=['occ_svm_max', 'svc'], classes='minority', ylabel='F1')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
                               classifiers=['occ_svm_max', 'svc'], classes='majority', ylabel='F1')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='F1')
 
 
 if __name__ == '__main__':
