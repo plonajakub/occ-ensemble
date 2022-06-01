@@ -73,9 +73,9 @@ def plot_feature_selection_results(path):
         clf_df_sorted = clf_df.sort_values(by='n_features')
         x = clf_df_sorted['n_features']
         y = clf_df_sorted['f1_mean']
+        yerr = clf_df_sorted['f1_std']
         plt.xticks(np.arange(df['n_features'].min(), df['n_features'].max() + 1, 1))
-        plt.plot(x, y, label=f'{clf}')
-        plt.scatter(x, y)
+        plt.errorbar(x, y, yerr=yerr, label=f'{clf}')
     plt.legend()
     plt.grid()
     plt.xlabel('Liczba cech')
@@ -88,16 +88,19 @@ def plot_feature_selection_results(path):
 def plot_parameter_search_plot(scores_df_path, param_df_key, param_name, y_label):
     scores_df = pd.read_csv(scores_df_path)
     scores_df_sorted = scores_df.sort_values(by=param_df_key)
-    plt.plot(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
-    plt.scatter(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'])
+    plt.errorbar(scores_df_sorted[param_df_key], scores_df_sorted['mean_test_score'],
+                 yerr=scores_df_sorted['std_test_score'])
+
     plt.xlabel(param_name)
     plt.ylabel(y_label)
     plt.grid()
+    plt.tight_layout()
     plt.show()
     plt.close()
 
 
-def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p2_df_key, midpoint=0.65, scientific=False):
+def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p2_df_key, midpoint=0.65,
+                                  scientific=False):
     """p1 changes first in data"""
     scores_df = pd.read_csv(scores_df_path)
     p1_range = scores_df[p1_df_key].unique()
@@ -141,17 +144,19 @@ def plot_parameter_search_heatmap(scores_df_path, p1_name, p1_df_key, p2_name, p
 
 
 def main():
-    # plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
-    # plot_feature_selection_results('../results/feature_selection/feature_selection_anova_results.csv')
+    plot_feature_selection_results('../results/feature_selection/feature_selection_mi_results.csv')
+    plot_feature_selection_results('../results/feature_selection/feature_selection_anova_results.csv')
 
     plot_parameter_search_heatmap('../results/parameter_search/occ_svm_max__grid_search__f1_score.csv',
-                                  'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5, scientific=True)
+                                  'nu', 'param_clf__svm_nu', 'gamma', 'param_clf__svm_gamma', midpoint=0.5,
+                                  scientific=True)
 
     plot_parameter_search_heatmap('../results/parameter_search/svc__grid_search__f1_score.csv',
                                   'gamma', 'param_clf__gamma', 'C', 'param_clf__C', midpoint=0.73, scientific=True)
 
     plot_parameter_search_heatmap('../results/parameter_search/occ_nm_knn__grid_search__f1_score.csv',
-                                  'knn_neighbors', 'param_clf__knn_neighbors', 'data_contamination', 'param_clf__data_contamination',
+                                  'knn_neighbors', 'param_clf__knn_neighbors', 'data_contamination',
+                                  'param_clf__data_contamination',
                                   midpoint=0.70, scientific=False)
 
     plot_parameter_search_plot('../results/parameter_search/occ_nb__grid_search__f1_score.csv',
