@@ -183,15 +183,44 @@ def main():
     do_wilcoxon_test_multiclass('../results/experiments/test_results_multiclass_f1.csv', 'occ_nb', 'gnb', 'f1')
 
     print_save_statistics('../results/experiments/test_results_simple_f1.csv', columns=['occ_svm_max', 'svc'])
+    print_save_statistics('../results/experiments/test_results_simple_f1.csv', columns=['occ_nearest_mean', 'nc'])
+    print_save_statistics('../results/experiments/test_results_simple_f1.csv', columns=['occ_nb', 'gnb'])
+
     print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_svm_max', 'svc'])
+    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nearest_mean', 'nc'])
+    print_boxplots('../results/experiments/test_results_simple_f1.csv', columns=['occ_nb', 'gnb'])
+
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_svm_max', 'svc'])
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nearest_mean', 'nc'])
+    print_boxplots('../results/experiments/test_results_simple_precision.csv', columns=['occ_nb', 'gnb'])
+
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_svm_max', 'svc'])
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nearest_mean', 'nc'])
+    print_boxplots('../results/experiments/test_results_simple_recall.csv', columns=['occ_nb', 'gnb'])
 
     convert_multiclass_format('../results/experiments/test_results_multiclass_f1.csv')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
-                              classifiers=['occ_svm_max', 'svc'], classes='minority', ylabel='F1')
-    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
-                              classifiers=['occ_svm_max', 'svc'], classes='majority', ylabel='F1')
-    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
                               classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='F1')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='F1')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='F1')
+
+    convert_multiclass_format('../results/experiments/test_results_multiclass_precision.csv')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Precyzja')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Precyzja')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Precyzja')
+
+    convert_multiclass_format('../results/experiments/test_results_multiclass_recall.csv')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
+                              classifiers=['occ_svm_max', 'svc'], classes=None, ylabel='Czułość')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
+                              classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Czułość')
+    print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
+                              classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Czułość')
 
 
 if __name__ == '__main__':
