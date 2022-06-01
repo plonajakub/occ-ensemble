@@ -56,7 +56,7 @@ def main():
         #          ['DL.1', 'AC.1', 'ALTV', 'DP.1', 'MSTV', 'ASTV', 'UC.1', 'MLTV', 'LB'])),
     ]
     clfs = {
-        'occ_svm_max': OCCSVMMax(svm_nu=0.1, svm_gamma=0.1),
+        'occ_svm_max': OCCSVMMax(svm_nu=0.3, svm_gamma=0.1),
         'svc': SVC(C=100, gamma=0.01, break_ties=True),
         'occ_nearest_mean': OCCNearestMean(knn_neighbors=1, data_contamination=0),
         'nc': NearestCentroid(),
