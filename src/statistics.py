@@ -156,6 +156,25 @@ def print_multiclass_boxplots(path, classifiers, ylabel, metric, classes=None):
     plt.close()
 
 
+def print_multiclass_boxplots_all_metric(path, classifiers, classes):
+    df = pd.read_csv(path)
+    df = df[df['Klasyfikator'].isin(classifiers)]
+    df = df[df['Klasa'].isin(classes)]
+
+    sns.set_theme()
+    plt.tight_layout()
+    palette = sns.color_palette()[:2] + [sns.color_palette()[3]]
+    g = sns.catplot(x='Klasa', y='Wartość metryki', hue='Metryka', col='Klasyfikator', data=df, kind='box',
+                    palette=palette, showmeans=True)
+    for ax in g.axes.flat:
+        ax.grid(True, axis='x')
+
+    classes_str = [str(c) for c in classes]
+    plt.savefig(
+        f'../results/statistics/boxplots/boxplot_multi_{"_".join(classes_str)}_{"_".join(classifiers)}_all_metrics')
+    plt.close()
+
+
 def print_multimetric_boxplots(path, classifiers):
     df = pd.read_csv(path)
     df = df[['score_name'] + classifiers]
@@ -171,7 +190,8 @@ def print_multimetric_boxplots(path, classifiers):
 
     sns.set_theme()
     palette = sns.color_palette()[:2] + [sns.color_palette()[3]]
-    sns.boxplot(x='Klasyfikator', y='Wartość metryki', hue='Metryka', data=converted_df, palette=palette, showmeans=True)
+    sns.boxplot(x='Klasyfikator', y='Wartość metryki', hue='Metryka', data=converted_df, palette=palette,
+                showmeans=True)
 
     plt.grid(axis='x')
     plt.tight_layout()
@@ -195,6 +215,18 @@ def convert_multiclass_format(path):
     filename = os.path.basename(path).split('.')[0] + '_db.csv'
     converted_df.to_csv(f'{dirname}/{filename}', index=False)
     pass
+
+
+def covert_multiclass_to_all_metrics(paths):
+    converted_df = pd.DataFrame()
+    metric_names = {'f1': 'F1', 'precision': 'Precyzja', 'recall': 'Czułość'}
+    for path in paths:
+        df = pd.read_csv(path)
+        df = df.rename({'Metryka': 'Wartość metryki'}, axis=1)
+        metric = os.path.basename(path).split('_')[-2]
+        df['Metryka'] = [metric_names[metric] for _ in range(df.shape[0])]
+        converted_df = pd.concat([converted_df, df], ignore_index=True)
+    converted_df.to_csv('../results/statistics/converted_multiclass/test_results_multiclass_db.csv', index=False)
 
 
 def main():
@@ -255,6 +287,31 @@ def main():
     print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_svm_max', 'svc'])
     print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_nearest_mean', 'nc'])
     print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_nb', 'gnb'])
+
+    covert_multiclass_to_all_metrics(['../results/statistics/converted_multiclass/test_results_multiclass_f1_db.csv',
+                                      '../results/statistics/converted_multiclass/test_results_multiclass_precision_db.csv',
+                                      '../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv'
+                                      ])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_svm_max', 'svc'], classes=[1, 2, 6, 7])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_svm_max', 'svc'], classes=[3, 4, 5])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_svm_max', 'svc'], classes=[8, 9, 10])
+
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nearest_mean', 'nc'], classes=[1, 2, 6, 7])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nearest_mean', 'nc'], classes=[3, 4, 5])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nearest_mean', 'nc'], classes=[8, 9, 10])
+
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nb', 'gnb'], classes=[1, 2, 6, 7])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nb', 'gnb'], classes=[3, 4, 5])
+    print_multiclass_boxplots_all_metric('../results/statistics/converted_multiclass/test_results_multiclass_db.csv',
+                                         classifiers=['occ_nb', 'gnb'], classes=[8, 9, 10])
 
 
 if __name__ == '__main__':
