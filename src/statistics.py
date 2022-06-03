@@ -156,6 +156,29 @@ def print_multiclass_boxplots(path, classifiers, ylabel, metric, classes=None):
     plt.close()
 
 
+def print_multimetric_boxplots(path, classifiers):
+    df = pd.read_csv(path)
+    df = df[['score_name'] + classifiers]
+    df = df[df['score_name'] != 'balanced_accuracy']
+
+    converted_df = pd.DataFrame()
+    metric_names = {'f1': 'F1', 'precision': 'Precyzja', 'recall': 'Czułość'}
+    for _, row in df.iterrows():
+        for i in range(2):
+            new_row = {'Metryka': [metric_names[row['score_name']]], 'Klasyfikator': [classifiers[i]],
+                       'Wartość metryki': [row[classifiers[i]]]}
+            converted_df = pd.concat([converted_df, pd.DataFrame(new_row)], ignore_index=True)
+
+    sns.set_theme()
+    palette = sns.color_palette()[:2] + [sns.color_palette()[3]]
+    sns.boxplot(x='Klasyfikator', y='Wartość metryki', hue='Metryka', data=converted_df, palette=palette, showmeans=True)
+
+    plt.grid(axis='x')
+    plt.tight_layout()
+    plt.savefig(f'../results/statistics/boxplots/boxplot_{"_".join(classifiers)}_all_metric')
+    plt.close()
+
+
 def convert_multiclass_format(path):
     df = pd.read_csv(path)
     df_n_rows = df.shape[0]
@@ -228,6 +251,10 @@ def main():
                               classifiers=['occ_nearest_mean', 'nc'], classes=None, ylabel='Czułość', metric='recall')
     print_multiclass_boxplots('../results/statistics/converted_multiclass/test_results_multiclass_recall_db.csv',
                               classifiers=['occ_nb', 'gnb'], classes=None, ylabel='Czułość', metric='recall')
+
+    print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_svm_max', 'svc'])
+    print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_nearest_mean', 'nc'])
+    print_multimetric_boxplots('../results/experiments/test_results_db.csv', classifiers=['occ_nb', 'gnb'])
 
 
 if __name__ == '__main__':
